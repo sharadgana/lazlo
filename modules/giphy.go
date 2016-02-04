@@ -1,40 +1,42 @@
 package modules
 
 import (
-	"math/rand"
-	"time"
+	"regexp"
 
 	lazlo "github.com/djosephsen/lazlo/lib"
+	"github.com/peterhellberg/giphy"
 )
 
 var Giphy = &lazlo.Module{
 	Name:  "Giphy",
-	Usage: `"%BOTNAME% giphy": Get a gif from giphy.com`,
-	Run:   pingRuns,
+	Usage: `"%BOTNAME% gif [search|translate] <term>": Get a gif from giphy.com. Need to set ENV variables documented @github.com/peterhellberg/giphy`,
+	Run:   getGIF,
 }
 
-func pingRuns(b *lazlo.Broker) {
-	cb := b.MessageCallback(`(?i)(ping|syn)`, true)
+func getGIF(b *lazlo.Broker) {
+	g := giphy.DefaultClient
+	str := []string{}
+	cb := b.MessageCallback(`(?i)gif ((?i)search|translate) (\w+)`, false)
 	for {
 		pm := <-cb.Chan
-		pm.Event.Reply(randReplys())
+		cmd := pm.Match[1]
+		lazlo.Logger.Debug(cmd)
+		if matched, _ := regexp.MatchString(`(?i)search`, cmd); matched {
+			str := append(str, pm.Match[2])
+			lazlo.Logger.Debug(str)
+			resp, err := g.Search(str)
+			if err != nil {
+				lazlo.Logger.Error(err)
+			}
+			pm.Event.Reply(resp.Data[0].URL)
+		} else if matched, _ := regexp.MatchString(`(?i)translate`, cmd); matched {
+			str := append(str, pm.Match[2])
+			lazlo.Logger.Debug(str)
+			resp, err := g.Translate(str)
+			if err != nil {
+				lazlo.Logger.Error(err)
+			}
+			pm.Event.Reply(resp.Data.URL)
+		}
 	}
-}
-
-func randReplys() string {
-	now := time.Now()
-	rand.Seed(int64(now.Unix()))
-	replies := []string{
-		"yeah um.. pong?",
-		"WHAT?! jeeze.",
-		"what? oh, um SYNACKSYN? ENOSPEAKTCP.",
-		"RST (lulz)",
-		"64 bytes from go.away.your.annoying icmp_seq=0 ttl=42 time=42.596 ms",
-		"hmm?",
-		"ack. what?",
-		"pong. what?",
-		"yup. still here.",
-		"super busy just now.. Can I get back to you in like 5min?",
-	}
-	return replies[rand.Intn(len(replies)-1)]
 }
