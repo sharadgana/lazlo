@@ -9,7 +9,7 @@ import (
 
 var Giphy = &lazlo.Module{
 	Name:  "Giphy",
-	Usage: `"%BOTNAME% gif [search|translate] <term>": Get a gif from giphy.com. Need to set ENV variables documented @github.com/peterhellberg/giphy`,
+	Usage: `"gif [search|translate] <term>": Get a gif from giphy.com. Need to set ENV variables documented @github.com/peterhellberg/giphy`,
 	Run:   getGIF,
 }
 
